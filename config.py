@@ -1,6 +1,32 @@
 import os
 
 
+class Parameter(object):
+    def __init__(self, name, value=None):
+        self.name = name
+        self.value = value
+
+    def config_string(self):
+        return '{} = {}\n'.format(self.name, self.value) if self.value else ''
+
+    def parse_value(self, config):
+        param_line = [line for line in config if self.name in line]
+        if len(param_line) > 1:
+            raise Exception('More than one configuration option set for parameter: '
+                            .format(self.name))
+        elif len(param_line) == 0:
+            self.value = None
+        else:
+            components = param_line[0].split('=')
+            if len(components) == 1 or components[0].startswith('#'):
+                self.value = None
+            if len(components) == 2:
+                self.value = components[1].rstrip().replace(' ', '')
+            else:
+                raise Exception('Malformed parameter: {}'.format(self.name))
+
+
+# TODO: Better type assertions and casting for properties
 class OsirisConfig(object):
     def __init__(self, config_file=None):
         # Which steps to perform
@@ -46,7 +72,8 @@ class OsirisConfig(object):
             parameter.parse_value(config)
 
     def write_config(self, config_file):
-        config_options = [parameter.config_string() for parameter in self.parameters]
+        config_options = [parameter.config_string()
+                          for parameter in self.parameters]
         if type(config_file) is str:
             with open(config_file, 'w') as config_file:
                 config_file.writelines(config_options)
@@ -55,7 +82,7 @@ class OsirisConfig(object):
 
     @property
     def parameters(self):
-        return self.__dict__.values()
+        return [parameter for parameter in self.__dict__.values()]
 
     @property
     def process_segmentation(self):
@@ -245,28 +272,3 @@ class OsirisConfig(object):
     @norm_image_width.setter
     def norm_image_width(self, value):
         self._norm_image_width.value = value
-
-
-class Parameter(object):
-    def __init__(self, name, value=None):
-        self.name = name
-        self.value = value
-
-    def config_string(self):
-        return '{} = {}\n'.format(self.name, self.value) if self.value else None
-
-    def parse_value(self, config):
-        param_line = [line for line in config if self.name in line]
-        if len(param_line) > 1:
-            raise Exception('More than one configuration option set for parameter: '
-                            .format(self.name))
-        elif len(param_line) == 0:
-            self.value = None
-        else:
-            components = param_line[0].split('=')
-            if len(components) == 1 or components[0].startswith('#'):
-                self.value = None
-            if len(components) == 2:
-                self.value = components[1].rstrip().replace(' ', '')
-            else:
-                raise Exception('Malformed parameter: {}'.format(self.name))
