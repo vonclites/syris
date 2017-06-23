@@ -1,4 +1,4 @@
-# cyris
+# syris
 Python interface to OSIRIS Iris Segmentation and Recognition software
 
 Original algorithm and code developed by Othman et al. [1]
